@@ -28,15 +28,23 @@ For details of the Mendeley Open API see http://dev.mendeley.com/
 import sys, requests, json, oauth2
 
 import mendeley_client
+import verbosity
 
+# options
+is_verbose = True
+should_download_pdfs = False
+# folder_name = '
+
+# setup
+verb = verbosity.Verbosity(is_verbose)
 mendeley = mendeley_client.create_client()
 
 # get folder name
-if len(sys.argv) < 2:
-    raise Exception('needs folder name argument')
-folder_name = sys.argv[1]
+# if len(sys.argv) < 2:
+#     raise Exception('needs folder name argument')
+# folder_name = sys.argv[1]
 
-# get folder documents
+verb.oseprint('getting folders')
 folders = mendeley.folders()
 
 folder_id = None
@@ -46,9 +54,18 @@ for folder in folders:
 if folder_id == None:
     raise Exception('Folder not found')
 
-# get folder documents
+verb.oseprint('getting folder documents')
 docs = mendeley.folder_documents(folder_id)
 
+file_to_download = None
 for doc_id in docs['document_ids']:
     details = mendeley.document_details(doc_id)
-    print(details)
+    if details['title'].lower().strip() == 'underground metabolism':
+        file_to_download = details['files'][0]
+        doc_download_id = doc_id
+
+if should_download_pdfs:
+    verb.oseprint('downloading files')
+    file = mendeley.download_file(doc_download_id, file_to_download['file_hash']) 
+    with open('/Users/zaking/Desktop/%s' % file['filename'], 'w') as f:
+        f.write(file['data'])
